@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% set active_page = "handshakes" %}
+{% block title %} Handshakes {% endblock %}
+{% block script %} filterList('.search-box input', '.handshakes li'); {% endblock %}
+{% block content %}
+<div class="search-box">
+  <input type="text" placeholder="Search handshakes..." />
+</div>
+
+<ul class="handshakes peers">
+  {% for handshake in handshakes %}
+  <li class="peer">
+    <a href="/handshakes/{{ handshake }}/download">
+      <div class="list-item-primary">
+        {{ handshake }}
+      </div>
+      <div class="list-item-secondary">
+        Download PCAP
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}
