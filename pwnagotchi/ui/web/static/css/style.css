@@ -285,6 +285,12 @@ strong, b {
   background-color: rgb(176,176,176);
 }
 
+#handshakes .navbar-icon {
+  -webkit-mask-image: url("../svg/download.svg");
+  mask-image: url("../svg/download.svg");
+  background-color: rgb(176,176,176);
+}
+
 #plugins .navbar-icon {
   -webkit-mask-image: url("../svg/plugins.svg");
   mask-image: url("../svg/plugins.svg");
@@ -309,6 +315,10 @@ strong, b {
 }
 
 #peers.active .navbar-icon {
+  background-color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
+}
+
+#handshakes.active .navbar-icon {
   background-color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
 }
 

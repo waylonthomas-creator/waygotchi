@@ -24,6 +24,8 @@ from flask import jsonify
 from flask import abort
 from flask import redirect
 from flask import render_template, render_template_string
+from flask import send_from_directory
+import glob
 
 
 class Handler:
@@ -70,6 +72,16 @@ class Handler:
             "send_message",
             self.with_auth(self.send_message),
             methods=["POST"],
+        )
+
+        # handshakes
+        self._app.add_url_rule(
+            "/handshakes", "handshakes", self.with_auth(self.handshakes)
+        )
+        self._app.add_url_rule(
+            "/handshakes/<handshake>/download",
+            "download_handshake",
+            self.with_auth(self.download_handshake),
         )
 
         # plugins
@@ -211,6 +223,25 @@ class Handler:
         logging.info("marking message %d as %s" % (int(id), mark))
         grid.mark_message(id, mark)
         return redirect("/inbox")
+
+    def handshakes(self):
+        handshakes_dir = pwnagotchi.config['bettercap']['handshakes']
+        if not os.path.exists(handshakes_dir):
+            handshakes = []
+        else:
+            handshakes_files = glob.glob(os.path.join(handshakes_dir, "*.pcap"))
+            handshakes = [os.path.basename(h) for h in handshakes_files]
+
+        return render_template(
+            "handshakes.html",
+            name=pwnagotchi.name(),
+            handshakes=handshakes,
+            error=None
+        )
+
+    def download_handshake(self, handshake):
+        handshakes_dir = pwnagotchi.config['bettercap']['handshakes']
+        return send_from_directory(handshakes_dir, handshake, as_attachment=True)
 
     def plugins(self, name, subpath):
         if name is None:
