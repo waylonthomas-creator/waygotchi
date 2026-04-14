@@ -128,10 +128,17 @@ def get_pixel(x, y):
 
 
 def _888_to_565(bt):
-    b = b''
+    # Performance optimization: pre-allocate bytearray instead of O(N^2) bytes concatenation
+    b = bytearray(len(bt) // 3 * 2)
+    j = 0
     for i in range(0, len(bt), 3):
-        b += int.to_bytes(bt[i] >> 3 << 11 | bt[i + 1] >> 2 << 5 | bt[i + 2] >> 3, 2, 'little')
-    return b
+        # Convert RGB888 to RGB565
+        val = bt[i] >> 3 << 11 | bt[i + 1] >> 2 << 5 | bt[i + 2] >> 3
+        # Direct byte assignment is faster than int.to_bytes
+        b[j] = val & 0xFF
+        b[j+1] = (val >> 8) & 0xFF
+        j += 2
+    return bytes(b)
 
 
 def numpy_888_565(bt):
