@@ -344,15 +344,15 @@ class auto_tune(plugins.Plugin):
         return ret
 
     def showInteractions(self):
-        ret = ""
+        ret = []
         numHidden = 0
         numVisible = 0
         if self._agent:
             now = time.time()
-            ret += "<h2>Interactions per endpoint</h2>"
-            ret += "<p><b>Encounters</b> is how many different times this AP has been seen, then not seen, then seen again. Interactions should be the sum of assoc and deauth attacks. All are per session stats. <b>Age</b> is seconds since AP was last seen by the plugin.</p>"
-            ret += "<table border=1 spacing=4 cellspacing=4 cellpadding=4>"
-            ret += "<tr><th>Hostname</th><th>MAC</th><th>Channel</th><th>Age</th><th>RSSI</th><th>Encounters</th><th>Associates</th><th>Deauths</th><th>Handshakes</th><th>Interactions</th></tr>"
+            ret.append("<h2>Interactions per endpoint</h2>")
+            ret.append("<p><b>Encounters</b> is how many different times this AP has been seen, then not seen, then seen again. Interactions should be the sum of assoc and deauth attacks. All are per session stats. <b>Age</b> is seconds since AP was last seen by the plugin.</p>")
+            ret.append("<table border=1 spacing=4 cellspacing=4 cellpadding=4>")
+            ret.append("<tr><th>Hostname</th><th>MAC</th><th>Channel</th><th>Age</th><th>RSSI</th><th>Encounters</th><th>Associates</th><th>Deauths</th><th>Handshakes</th><th>Interactions</th></tr>")
             for (id, ap) in sorted(self._known_aps.items(), key=lambda x: x[1]['AT_lastseen'], reverse=True):
                 lmac = ap['mac'].lower()
                 if ap['hostname'] == "<hidden>" and not self.options['show_hidden']:
@@ -371,31 +371,31 @@ class auto_tune(plugins.Plugin):
                     numVisible += 1
                     logging.debug("Not skipping '%s'" % ap['hostname'])
                 if ap['AT_visible']:
-                    ret += "<tr><td>%s</td>" % html.escape(ap['hostname'])
+                    ret.append("<tr><td>%s</td>" % html.escape(ap['hostname']))
                 else:
-                    ret += "<tr><td><i>%s</i></td>" % html.escape(
-                        ap['hostname'])  # italicise hosts not currently visible
-                ret += "<td>%s</td><td>%s</td>" % (ap['mac'], ap['channel'])
-                ret += "<td>%d</td>" % int(now - ap['AT_lastseen'])  # time since last interaction
-                ret += "<td>%s</td>" % ap['rssi']
+                    ret.append("<tr><td><i>%s</i></td>" % html.escape(
+                        ap['hostname']))  # italicise hosts not currently visible
+                ret.append("<td>%s</td><td>%s</td>" % (ap['mac'], ap['channel']))
+                ret.append("<td>%d</td>" % int(now - ap['AT_lastseen']))  # time since last interaction
+                ret.append("<td>%s</td>" % ap['rssi'])
                 for t in ['seen', 'assoc', 'deauth', 'handshake']:
                     tag = 'AT_' + t
                     if tag in ap:
-                        ret += "<td>%s</td>" % ap[tag]
+                        ret.append("<td>%s</td>" % ap[tag])
                     else:
-                        ret += "<td></td>"
+                        ret.append("<td></td>")
                 if lmac in self._agent._history:
-                    ret += "<td>%s</td>" % self._agent._history[lmac]
+                    ret.append("<td>%s</td>" % self._agent._history[lmac])
                 else:
-                    ret += "<td>no attacks yet</td>"
-                ret += "</tr>\n"
+                    ret.append("<td>no attacks yet</td>")
+                ret.append("</tr>\n")
             #            for (mac, count) in sorted(self._agent._history.items(), key=lambda x:x[1], reverse = True):
-            #                ret += "<tr><td>%s</td><td>%s</td><td></td><td>%s</td></tr>" % (mac, mac, count)
-            ret += "</table>\n"
+            #                ret.append("<tr><td>%s</td><td>%s</td><td></td><td>%s</td></tr>" % (mac, mac, count))
+            ret.append("</table>\n")
             if numHidden:
-                ret += "%s visible, %s hidden networks<p>" % (numVisible, numHidden)
+                ret.append("%s visible, %s hidden networks<p>" % (numVisible, numHidden))
 
-        return ret
+        return "".join(ret)
 
     def update_parameter(self, cfg, parameter, vtype, val, ret):
         changed = False
