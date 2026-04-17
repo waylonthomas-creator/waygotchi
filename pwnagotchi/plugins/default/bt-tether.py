@@ -40,7 +40,6 @@ import logging
 import os
 import re
 import traceback
-import json
 import datetime
 from pwnagotchi.plugins import Plugin
 from flask import render_template_string, request, jsonify
