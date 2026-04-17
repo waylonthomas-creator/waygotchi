@@ -128,10 +128,12 @@ def get_pixel(x, y):
 
 
 def _888_to_565(bt):
-    b = b''
+    # Pre-allocate bytearray and use struct.pack_into to avoid O(N^2) bytes concatenation
+    b = bytearray((len(bt) // 3) * 2)
+    pack = struct.pack_into
     for i in range(0, len(bt), 3):
-        b += int.to_bytes(bt[i] >> 3 << 11 | bt[i + 1] >> 2 << 5 | bt[i + 2] >> 3, 2, 'little')
-    return b
+        pack('<H', b, (i // 3) * 2, bt[i] >> 3 << 11 | bt[i + 1] >> 2 << 5 | bt[i + 2] >> 3)
+    return bytes(b)
 
 
 def numpy_888_565(bt):
