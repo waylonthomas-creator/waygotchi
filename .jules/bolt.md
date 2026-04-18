@@ -1,0 +1,3 @@
+## 2024-04-18 - List Filtering Complexity (O(N*M))
+**Learning:** Nested loops where the inner loop transforms constant invariants (like lowercasing/stripping a whitelist array) creates unexpected O(N*M) bottlenecks. By pre-transforming/normalizing the inner array outside the main loop, we reduce algorithmic complexity to O(N+M). This pattern is particularly impactful when dealing with large datasets (e.g. thousands of files/handshakes to iterate over, against dozens of whitelist items).
+**Action:** Always pre-process/normalize static invariant data arrays outside of iteration loops to avoid redundant transformations.
