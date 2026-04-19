@@ -31,11 +31,13 @@ def remove_whitelisted(list_of_handshakes, list_of_whitelisted_strings, valid_on
         """
         return str.lower(''.join(c for c in name if c.isalnum()))
 
+    # Performance optimization: pre-normalize whitelist strings to avoid O(N*M) normalizations
+    normalized_whitelisted = [normalize(w) for w in list_of_whitelisted_strings]
+
     for handshake in list_of_handshakes:
         try:
             normalized_handshake = normalize(os.path.basename(handshake).rstrip('.pcap'))
-            for whitelist in list_of_whitelisted_strings:
-                normalized_whitelist = normalize(whitelist)
+            for normalized_whitelist in normalized_whitelisted:
                 if normalized_whitelist in normalized_handshake:
                     break
             else:
