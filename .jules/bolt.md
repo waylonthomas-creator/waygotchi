@@ -1,0 +1,3 @@
+## 2024-05-24 - [Avoid 3.11+ functions due to embedded target]
+**Learning:** Even though `pyproject.toml` requires `python = ">=3.11"`, Pwnagotchi runs on various embedded hardware environments (like Raspberry Pi OS Buster/Bullseye), which might only have older versions of Python available (3.7 or 3.9). Using 3.11+ exclusive standard library features (like `hashlib.file_digest`) will crash the application for many users.
+**Action:** Before optimizing standard library usages, double check the compatibility of the functions to ensure they work safely on Python 3.7+ despite what `pyproject.toml` asserts.
