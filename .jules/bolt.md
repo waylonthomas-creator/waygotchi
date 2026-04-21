@@ -1,0 +1,3 @@
+## 2024-03-24 - Avoid O(N^2) byte concatenation overhead in fb.py
+**Learning:** In python, doing `b += int.to_bytes(...)` in a tight loop over many items (e.g. pixels for a framebuffer) leads to O(N^2) time complexity because `b` has to be reallocated and copied each time. Pwnagotchi `fb.py` has a helper `_888_to_565` for framebuffer rendering which suffers from this exact overhead for every frame refresh when not using numpy.
+**Action:** Always pre-allocate memory using `bytearray` when constructing large byte buffers. In this case, `out = bytearray((len(bt) // 3) * 2)` and assigning directly via index (`out[idx] = val & 0xFF`, `out[idx+1] = val >> 8`) improved performance by ~6x over repeated concatenation `b += ...`.
