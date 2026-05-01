@@ -128,10 +128,18 @@ def get_pixel(x, y):
 
 
 def _888_to_565(bt):
-    b = b''
-    for i in range(0, len(bt), 3):
-        b += int.to_bytes(bt[i] >> 3 << 11 | bt[i + 1] >> 2 << 5 | bt[i + 2] >> 3, 2, 'little')
-    return b
+    n = len(bt)
+    res_len = (n // 3) * 2
+    b = bytearray(res_len)
+
+    out_idx = 0
+    for i in range(0, n, 3):
+        val = (bt[i] >> 3 << 11) | (bt[i + 1] >> 2 << 5) | (bt[i + 2] >> 3)
+        b[out_idx] = val & 0xFF
+        b[out_idx + 1] = (val >> 8) & 0xFF
+        out_idx += 2
+
+    return bytes(b)
 
 
 def numpy_888_565(bt):
