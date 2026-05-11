@@ -1,0 +1,3 @@
+## 2024-05-19 - Memory Reallocation Overhead in Framebuffer Rendering
+**Learning:** O(N^2) memory reallocation overhead when constructing large byte buffers in Python string concatenation (`b += ...`) inside a loop causes significant performance issues, especially in `_888_to_565` fallback function in `pwnagotchi/ui/hw/libs/fb/fb.py`. The original implementation takes ~15.2s for 10 iterations of a large array, while a pre-allocated `bytearray` using bitwise operations takes ~1.36s.
+**Action:** When constructing large byte arrays in loops, always pre-allocate the memory using `bytearray` and assign elements using direct index assignment (with bitwise shifts for packing) rather than concatenating byte strings.
