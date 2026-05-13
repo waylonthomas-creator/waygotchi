@@ -1,0 +1,3 @@
+## 2024-10-25 - [O(N*M) Loop Invariant Pre-computation]
+**Learning:** In list filtering operations with nested loops (like checking a list of N strings against a whitelist of M strings), failing to pre-compute invariant criteria inside the loop causes unnecessary O(N*M) time complexity. Specifically, `normalize(whitelist)` was being evaluated M times per handshake, causing significant slowdowns.
+**Action:** When working with nested loops for matching logic, always extract normalizations or computations that do not depend on the outer loop variable to be performed once before the outer loop begins, reducing complexity from O(N*M) back to O(N+M) for those operations.
