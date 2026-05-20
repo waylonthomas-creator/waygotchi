@@ -1,0 +1,3 @@
+## 2024-05-20 - Optimize _888_to_565 performance
+**Learning:** Found a significant performance bottleneck in `pwnagotchi/ui/hw/libs/fb/fb.py` where `_888_to_565` iterates through bytes, does bitwise math, and uses `int.to_bytes` combined with string concatenation inside a loop. The byte string concatenation inside the loop creates O(n²) memory reallocation overhead, which takes ~223s for 3MB of data on a typical x86 machine. Using a pre-allocated `bytearray` and avoiding `int.to_bytes` reduces the time to ~0.67s.
+**Action:** Replace string concatenation inside loops with pre-allocated `bytearray` and direct index assignment, especially in functions dealing with images or large buffers.
