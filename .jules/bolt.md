@@ -1,0 +1,3 @@
+## 2024-05-24 - Pre-allocated bytearrays for pure Python framebuffer conversions
+**Learning:** Inside python loops, byte string concatenation (`b += ...`) causes an `O(N^2)` performance bottleneck due to continuous memory reallocation. Using `int.to_bytes` per-pixel is also slow. In embedded environments, optimizing image transformations requires pre-allocating a `bytearray` based on the target length, and using bitwise masking (`val & 0xFF`, `val >> 8`) to assign bytes directly by index (`b[j] = ...`).
+**Action:** When implementing pixel-level processing loops in python, always pre-allocate memory and use direct slice/index assignment with bitwise ops instead of loop accumulations or object creation like `int.to_bytes`.
