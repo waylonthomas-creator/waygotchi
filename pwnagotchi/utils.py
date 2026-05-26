@@ -565,7 +565,9 @@ def md5(fname):
 
 def extract_from_pcap(path, fields):
     """
-    Search in pcap-file for specified information
+    Search in pcap-file for specified information.
+    Optimized to read the pcap file only once using scapy.utils.PcapReader
+    to avoid O(N*M) runtime complexity.
 
     path: Path to pcap file
     fields: Array of fields that should be extracted
@@ -573,81 +575,55 @@ def extract_from_pcap(path, fields):
     If a field is not found, FieldNotFoundError is raised
     """
     results = dict()
-    for field in fields:
-        subtypes = set()
+    fields_to_find = set(fields)
 
-        if field == WifiInfo.BSSID:
-            from scapy.layers.dot11 import Dot11Beacon, Dot11ProbeResp, Dot11AssoReq, Dot11ReassoReq, Dot11, sniff
-            subtypes.add('beacon')
-            bpf_filter = " or ".join([f"wlan type mgt subtype {subtype}" for subtype in subtypes])
-            packets = sniff(offline=path, filter=bpf_filter)
-            try:
-                for packet in packets:
+    from scapy.layers.dot11 import Dot11Beacon, Dot11Elt, Dot11, RadioTap
+    from scapy.utils import PcapReader
+    from pwnagotchi.mesh.wifi import freq_to_channel
+
+    with PcapReader(path) as pcap:
+        for packet in pcap:
+            if not fields_to_find:
+                break
+
+            if packet.haslayer(RadioTap):
+                if WifiInfo.CHANNEL in fields_to_find and hasattr(packet[RadioTap], 'ChannelFrequency'):
+                    results[WifiInfo.CHANNEL] = freq_to_channel(packet[RadioTap].ChannelFrequency)
+                    fields_to_find.remove(WifiInfo.CHANNEL)
+
+                if WifiInfo.FREQUENCY in fields_to_find and hasattr(packet[RadioTap], 'ChannelFrequency'):
+                    results[WifiInfo.FREQUENCY] = packet[RadioTap].ChannelFrequency
+                    fields_to_find.remove(WifiInfo.FREQUENCY)
+
+                if WifiInfo.RSSI in fields_to_find and hasattr(packet[RadioTap], 'dBm_AntSignal'):
+                    results[WifiInfo.RSSI] = packet[RadioTap].dBm_AntSignal
+                    fields_to_find.remove(WifiInfo.RSSI)
+
+            if packet.haslayer(Dot11) and packet.type == 0: # Management frame
+                if WifiInfo.BSSID in fields_to_find and packet.subtype == 8: # Beacon
                     if packet.haslayer(Dot11Beacon) and hasattr(packet[Dot11], 'addr3'):
-                        results[field] = packet[Dot11].addr3
-                        break
-                else:  # magic
-                    raise FieldNotFoundError("Could not find field [BSSID]")
-            except Exception:
-                raise FieldNotFoundError("Could not find field [BSSID]")
-        elif field == WifiInfo.ESSID:
-            from scapy.layers.dot11 import Dot11Beacon, Dot11ReassoReq, Dot11AssoReq, Dot11, sniff, Dot11Elt
-            subtypes.add('beacon')
-            subtypes.add('assoc-req')
-            subtypes.add('reassoc-req')
-            bpf_filter = " or ".join([f"wlan type mgt subtype {subtype}" for subtype in subtypes])
-            packets = sniff(offline=path, filter=bpf_filter)
-            try:
-                for packet in packets:
+                        results[WifiInfo.BSSID] = packet[Dot11].addr3
+                        fields_to_find.remove(WifiInfo.BSSID)
+
+                if WifiInfo.ESSID in fields_to_find and packet.subtype in (0, 2, 8):
                     if packet.haslayer(Dot11Elt) and hasattr(packet[Dot11Elt], 'info'):
-                        results[field] = packet[Dot11Elt].info.decode('utf-8')
-                        break
-                else:  # magic
-                    raise FieldNotFoundError("Could not find field [ESSID]")
-            except Exception:
-                raise FieldNotFoundError("Could not find field [ESSID]")
-        elif field == WifiInfo.ENCRYPTION:
-            from scapy.layers.dot11 import Dot11Beacon, sniff
-            subtypes.add('beacon')
-            bpf_filter = " or ".join([f"wlan type mgt subtype {subtype}" for subtype in subtypes])
-            packets = sniff(offline=path, filter=bpf_filter)
-            try:
-                for packet in packets:
+                        try:
+                            results[WifiInfo.ESSID] = packet[Dot11Elt].info.decode('utf-8')
+                            fields_to_find.remove(WifiInfo.ESSID)
+                        except UnicodeDecodeError:
+                            pass
+
+                if WifiInfo.ENCRYPTION in fields_to_find and packet.subtype == 8: # Beacon
                     if packet.haslayer(Dot11Beacon) and hasattr(packet[Dot11Beacon], 'network_stats'):
                         stats = packet[Dot11Beacon].network_stats()
                         if 'crypto' in stats:
-                            results[field] = stats['crypto']  # set with encryption types
-                            break
-                else:  # magic
-                    raise FieldNotFoundError("Could not find field [ENCRYPTION]")
-            except Exception:
-                raise FieldNotFoundError("Could not find field [ENCRYPTION]")
-        elif field == WifiInfo.CHANNEL:
-            from scapy.layers.dot11 import sniff, RadioTap
-            from pwnagotchi.mesh.wifi import freq_to_channel
-            packets = sniff(offline=path, count=1)
-            try:
-                results[field] = freq_to_channel(packets[0][RadioTap].ChannelFrequency)
-            except Exception:
-                raise FieldNotFoundError("Could not find field [CHANNEL]")
-        elif field == WifiInfo.FREQUENCY:
-            from scapy.layers.dot11 import sniff, RadioTap
-            from pwnagotchi.mesh.wifi import freq_to_channel
-            packets = sniff(offline=path, count=1)
-            try:
-                results[field] = packets[0][RadioTap].ChannelFrequency
-            except Exception:
-                raise FieldNotFoundError("Could not find field [FREQUENCY]")
-        elif field == WifiInfo.RSSI:
-            from scapy.layers.dot11 import sniff, RadioTap
-            from pwnagotchi.mesh.wifi import freq_to_channel
-            packets = sniff(offline=path, count=1)
-            try:
-                results[field] = packets[0][RadioTap].dBm_AntSignal
-            except Exception:
-                raise FieldNotFoundError("Could not find field [RSSI]")
-        else:
-            raise TypeError("Invalid field")
+                            results[WifiInfo.ENCRYPTION] = stats['crypto']
+                            fields_to_find.remove(WifiInfo.ENCRYPTION)
+
+    for field in fields:
+        if field not in results:
+            raise FieldNotFoundError(f"Could not find field [{field}]")
+
     return results
 
 
