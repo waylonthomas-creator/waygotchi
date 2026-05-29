@@ -128,10 +128,21 @@ def get_pixel(x, y):
 
 
 def _888_to_565(bt):
-    b = b''
-    for i in range(0, len(bt), 3):
-        b += int.to_bytes(bt[i] >> 3 << 11 | bt[i + 1] >> 2 << 5 | bt[i + 2] >> 3, 2, 'little')
-    return b
+    # Performance Optimization: Pre-allocate a bytearray to avoid O(N^2) memory reallocation
+    # overhead from string concatenation inside the loop. Use direct bitwise assignment
+    # instead of int.to_bytes for significantly faster processing.
+    length = len(bt)
+    out = bytearray((length // 3) * 2)
+    out_idx = 0
+    for i in range(0, length, 3):
+        r = bt[i]
+        g = bt[i + 1]
+        b = bt[i + 2]
+        val = (r >> 3 << 11) | (g >> 2 << 5) | (b >> 3)
+        out[out_idx] = val & 0xFF
+        out[out_idx + 1] = (val >> 8) & 0xFF
+        out_idx += 2
+    return bytes(out)
 
 
 def numpy_888_565(bt):
