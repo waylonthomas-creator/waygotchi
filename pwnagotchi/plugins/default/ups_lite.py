@@ -32,7 +32,6 @@ CW2015_REG_SOC = 0X04
 CW2015_REG_MODE = 0X0A
 
 
-# TODO: add enable switch in config.yml an cleanup all to the best place
 class UPS:
     def __init__(self):
         # only import when the module is loaded and enabled
@@ -74,6 +73,7 @@ class UPSLite(plugins.Plugin):
 
     def __init__(self):
         self.ups = None
+        self.options = dict()
 
     def on_loaded(self):
         self.ups = UPS()
@@ -90,3 +90,8 @@ class UPSLite(plugins.Plugin):
         capacity = self.ups.capacity()
         charging = self.ups.charging()
         ui.set('ups', "%2i%s" % (capacity, charging))
+
+        if capacity > 0 and capacity <= self.options.get('shutdown', 2):
+            logging.info('[ups_lite] Empty battery (<= %s%%): shutting down', self.options.get('shutdown', 2))
+            ui.update(force=True, new_data={'status': 'Battery exhausted, bye ...'})
+            pwnagotchi.shutdown()
