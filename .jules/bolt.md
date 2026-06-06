@@ -1,0 +1,3 @@
+## 2024-05-24 - Handle explicit configuration file names
+**Learning:** Even if a user requests adding a configuration property to a specific user-level configuration file name (e.g. `config.yml`), it should not be created in the repository root if it does not already exist. Pwnagotchi manages default plugin configurations in `pwnagotchi/defaults.toml` and automatically merges these with the user's configuration file at runtime.
+**Action:** Do not create `config.yml` in the project root; simply implement the plugin code to load options dynamically, and rely on the existing `defaults.toml` for the defaults.
