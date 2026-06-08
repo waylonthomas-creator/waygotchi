@@ -128,16 +128,35 @@ def get_pixel(x, y):
 
 
 def _888_to_565(bt):
-    b = b''
-    for i in range(0, len(bt), 3):
-        b += int.to_bytes(bt[i] >> 3 << 11 | bt[i + 1] >> 2 << 5 | bt[i + 2] >> 3, 2, 'little')
-    return b
+    # Optimized: Pre-allocated bytearray and direct bitwise assignment
+    length = len(bt)
+    pixels = length // 3
+    b = bytearray(pixels * 2)
+    for i in range(pixels):
+        src = i * 3
+        dst = i * 2
+        val = (bt[src] >> 3 << 11) | (bt[src + 1] >> 2 << 5) | (bt[src + 2] >> 3)
+        b[dst] = val & 0xFF
+        b[dst + 1] = val >> 8
+    return bytes(b)
 
 
 def numpy_888_565(bt):
-    import numpy as np
-    arr = np.fromstring(bt, dtype=np.uint32)
-    return (((0xF80000 & arr) >> 8) | ((0xFC00 & arr) >> 5) | ((0xF8 & arr) >> 3)).astype(np.uint16).tostring()
+    try:
+        import numpy as np
+        arr = np.fromstring(bt, dtype=np.uint32)
+        return (((0xF80000 & arr) >> 8) | ((0xFC00 & arr) >> 5) | ((0xF8 & arr) >> 3)).astype(np.uint16).tostring()
+    except ImportError:
+        # Fallback to optimized pure Python if numpy is not installed
+        pixels = len(bt) // 4
+        b = bytearray(pixels * 2)
+        for i in range(pixels):
+            src = i * 4
+            dst = i * 2
+            val = (bt[src+2] >> 3 << 11) | (bt[src+1] >> 2 << 5) | (bt[src] >> 3)
+            b[dst] = val & 0xFF
+            b[dst + 1] = val >> 8
+        return bytes(b)
 
 
 def show_img(img):
